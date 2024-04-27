@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BMI Calculator</title>
+    <style>
+        /* Add any additional styling you need */
+        body {
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome to the BMI Calculator</h1>
+
+    <form id="bmiForm">
+        <input type="text" name="name" placeholder="Enter Name" required>
+        <input type="number" min="0" step="0.01" name="height" placeholder="Height in meters" required>
+        <input type="number" min="0" name="weight" placeholder="Weight in kg" required>
+        <button type="submit">Calculate BMI</button>
+    </form>
+
+    <div id="bmiResult"></div>
+
+    <h2>BMI History</h2>
+    <button id="viewHistoryButton">View BMI History</button>
+    <table id="historyTable">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Date</th>
+                <th>Weight (kg)</th>
+                <th>Height (m)</th>
+                <th>BMI</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- BMI history entries will be added here -->
+        </tbody>
+    </table>
+
+    <script>
+        document.getElementById('bmiForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const name = formData.get('name');
+            const height = formData.get('height');
+            const weight = formData.get('weight');
+
+            fetch('/calculateBMI', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `name=${encodeURIComponent(name)}&height=${encodeURIComponent(height)}&weight=${encodeURIComponent(weight)}`
+            })
+            .then(response => response.text())
+            .then(result => {
+                document.getElementById('bmiResult').textContent = result;
+                document.getElementById('viewHistoryButton').click(); // Refresh history
+            })
+            .catch(error => console.error('Error:', error));
+        });
+
+        document.getElementById('viewHistoryButton').addEventListener('click', function () {
+            fetch('/bmiHistory')
+                .then(response => response.json())
+                .then(data => updateHistoryTable(data))
+                .catch(error => console.error('Error:', error));
+        });
+
+        function updateHistoryTable(data) {
+            const historyTable = document.getElementById('historyTable').getElementsByTagName('tbody')[0];
+            historyTable.innerHTML = '';
+
+            data.forEach(entry => {
+                let row = historyTable.insertRow();
+                let nameCell = row.insertCell(0);
+                let dateCell = row.insertCell(1);
+                let weightCell = row.insertCell(2);
+                let heightCell = row.insertCell(3);
+                let bmiCell = row.insertCell(4);
+                let statusCell = row.insertCell(5);
+
+                nameCell.innerHTML = entry.name;
+                dateCell.innerHTML = new Date(entry.timestamp).toLocaleString();
+                weightCell.innerHTML = entry.weight;
+                heightCell.innerHTML = entry.height;
+                bmiCell.innerHTML = entry.bmi.toFixed(2);
+                statusCell.innerHTML = entry.status;
+            });
+        }
+    </script>
+</body>
+</html>
